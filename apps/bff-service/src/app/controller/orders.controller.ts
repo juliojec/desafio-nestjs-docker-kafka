@@ -78,9 +78,9 @@ export class OrdersController {
   async getOrderById(@Param('orderId') orderId: string) {
     console.log("Find Order from Id: ", orderId);
 
-    const order = await firstValueFrom(this.httpService.get(`${this.configService.get('ORDERS_SERVICE_URL')}/orders/${orderId}`));
+    const response = await firstValueFrom(this.httpService.get(`${this.configService.get('ORDERS_SERVICE_URL')}/orders/${orderId}`));
 
-    return { orderId, order };
+    return response.data;
   }
 
   @Get('/payment/:orderId')
@@ -89,9 +89,9 @@ export class OrdersController {
   async getPayment(@Param('orderId') orderId: string) {
     console.log("Find Payment from OrderId: ", orderId);
 
-    const payment = await firstValueFrom(this.httpService.get(`${this.configService.get('PAYMENT_SERVICE_URL')}/payments/${orderId}`));
+    const response = await firstValueFrom(this.httpService.get(`${this.configService.get('PAYMENTS_SERVICE_URL')}/payments/${orderId}`));
 
-    return { orderId, payment };
+    return response.data;
   }
 
   @Get('/expedition/:orderId')
@@ -100,9 +100,9 @@ export class OrdersController {
   async getExpedition(@Param('orderId') orderId: string) {
     console.log("Find Expedition from OrderId: ", orderId);
 
-    const expedition = await firstValueFrom(this.httpService.get(`${this.configService.get('EXPEDITION_SERVICE_URL')}/expeditions/${orderId}`));
+    const response = await firstValueFrom(this.httpService.get(`${this.configService.get('EXPEDITIONS_SERVICE_URL')}/expeditions/${orderId}`));
 
-    return { orderId, expedition };
+    return response.data;
   }
 
   @Get(':orderId/complete')
@@ -115,7 +115,7 @@ export class OrdersController {
     const payment = await firstValueFrom(this.httpService.get(`http:/${this.configService.get('PAYMENT_SERVICE_URL')}/payments/${orderId}`));
     const expedition = await firstValueFrom(this.httpService.get(`http://${this.configService.get('EXPEDITION_SERVICE_URL')}/expeditions/${orderId}`));
 
-    return { orderId, order, payment, expedition };
+    return { orderId, ordem: order.data, payment: payment.data, expedition: expedition.data };
   }
 
 }

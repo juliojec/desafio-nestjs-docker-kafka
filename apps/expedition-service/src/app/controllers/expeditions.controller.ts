@@ -28,6 +28,8 @@ export class ExpeditionsController {
     expedition.createdAt = new Date();
     expedition.status = ExpeditionStatus.DELIVERED;
 
+    await this.expeditionsService.createExpedition(expedition);
+
     await this.kafkaProducer.publishEvent('order.completed', order);
 
     console.log('Order delivered: ', order.id);
