@@ -100,7 +100,7 @@ export class OrdersController {
   async getExpedition(@Param('orderId') orderId: string) {
     console.log("Find Expedition from OrderId: ", orderId);
 
-    const response = await firstValueFrom(this.httpService.get(`${this.configService.get('EXPEDITIONS_SERVICE_URL')}/expeditions/${orderId}`));
+    const response = await firstValueFrom(this.httpService.get(`${this.configService.get('EXPEDITION_SERVICE_URL')}/expeditions/${orderId}`));
 
     return response.data;
   }
