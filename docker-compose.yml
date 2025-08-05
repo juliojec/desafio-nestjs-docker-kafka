@@ -1,0 +1,193 @@
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    hostname: zookeeper
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - router-network
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo 'ruok' | nc localhost 2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    hostname: kafka
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+    networks:
+      - router-network
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:29092"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+  
+  orders-db:
+    image: postgres:15-alpine
+    container_name: orders-db
+    environment:
+      POSTGRES_DB: orders
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    ports:
+      - "5432:5432"
+    networks:
+      - router-network
+    volumes:
+      - orders-data:/var/lib/postgresql/data
+      - ./scripts/orders.sql:/docker-entrypoint-initdb.d/01-orders.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d orders"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  payments-db:
+    image: postgres:15-alpine
+    container_name: payments-db
+    environment:
+      POSTGRES_DB: payments
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    ports:
+      - "5433:5432"
+    networks:
+      - router-network
+    volumes:
+      - payments-data:/var/lib/postgresql/data
+      - ./scripts/payments.sql:/docker-entrypoint-initdb.d/01-payments.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d payments"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  expeditions-db:
+    image: postgres:15-alpine
+    container_name: expeditions-db
+    environment:
+      POSTGRES_DB: expeditions
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    ports:
+      - "5434:5432"
+    restart: unless-stopped
+    networks:
+      - router-network
+    volumes:
+      - expeditions-data:/var/lib/postgresql/data
+      - ./scripts/expeditions.sql:/docker-entrypoint-initdb.d/01-expeditions.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d expeditions"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  
+  bff-service:
+    build:
+      context: .
+      dockerfile: apps/bff-service/Dockerfile
+    container_name: bff-service
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    depends_on:
+      - kafka
+    networks:
+      - router-network
+    env_file:
+      - .env
+    environment:
+      - KAFKA_BROKER=kafka:29092
+      - ORDERS_SERVICE_URL=http://orders-service:3001
+      - PAYMENTS_SERVICE_URL=http://payments-service:3003
+      - EXPEDITION_SERVICE_URL=http://expedition-service:3002
+      - KAFKAJS_NO_PARTITIONER_WARNING=1
+
+  orders-service:
+    build:
+      context: .
+      dockerfile: apps/orders-service/Dockerfile
+    container_name: orders-service
+    ports:
+      - "3001:3001"
+    depends_on:
+      - kafka
+      - orders-db
+    networks:
+      - router-network
+    env_file:
+      - .env
+    environment:
+      - KAFKA_BROKER=kafka:29092
+      - KAFKAJS_NO_PARTITIONER_WARNING=1
+    restart: unless-stopped
+
+  payments-service:
+    build:
+      context: .
+      dockerfile: apps/payments-service/Dockerfile
+    container_name: payments-service
+    ports:
+      - "3003:3003"
+    depends_on:
+      - kafka
+      - payments-db
+    networks:
+      - router-network
+    env_file:
+      - .env
+    environment:
+      - KAFKA_BROKER=kafka:29092
+      - KAFKAJS_NO_PARTITIONER_WARNING=1
+    restart: unless-stopped
+
+  expedition-service:
+    build:
+      context: .
+      dockerfile: apps/expedition-service/Dockerfile
+    container_name: expedition-service
+    ports:
+      - "3002:3002"
+    depends_on:
+      - kafka
+      - expeditions-db
+    networks:
+      - router-network
+    env_file:
+      - .env
+    environment:
+      - KAFKA_BROKER=kafka:29092
+      - KAFKAJS_NO_PARTITIONER_WARNING=1
+    restart: unless-stopped
+  
+volumes:
+  orders-data:
+  payments-data:
+  expeditions-data:
+
+networks:
+  router-network:
+    driver: bridge
