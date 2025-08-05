@@ -13,7 +13,8 @@ export class OrdersService {
     const order = this.ordersRepository.create({
       userId: orderData.userId,
       status: orderData.status || OrderStatus.PROCESSING,
-      items: orderData.items
+      items: orderData.items,
+      id: orderData.id
     });
 
     const savedOrder = await this.ordersRepository.save(order);
