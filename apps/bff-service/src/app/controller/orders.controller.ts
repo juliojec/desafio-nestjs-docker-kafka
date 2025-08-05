@@ -50,7 +50,7 @@ export class OrdersController {
 
     await this.kafkaProducer.publishEvent("order.checkout", orderData);
 
-    return { orderId, success: true, status: OrderStatus.PROCESSING };
+    return { success: true, status: OrderStatus.PROCESSING };
   }
 
   @Get('/')
