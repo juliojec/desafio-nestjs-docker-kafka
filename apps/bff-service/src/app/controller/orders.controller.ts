@@ -22,7 +22,6 @@ export class OrdersController {
         summary: 'Pedido Corinthians',
         description: 'Exemplo de pedido com produtos do Corinthians',
         value: {
-          id: "a9651129-777a-4a4c-ac6d-ed06186d47d9",
           userId: "user-98765",
           items: [
             {
