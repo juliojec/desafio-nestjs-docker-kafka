@@ -105,17 +105,4 @@ export class OrdersController {
     return response.data;
   }
 
-  @Get(':orderId/complete')
-  @ApiOperation({ summary: 'Busca todas as informações de um pedido (ordem, pagamento, expedição)' })
-  @ApiParam({ name: 'orderId', type: String })
-  async getOrder(@Param('orderId') orderId: string) {
-    console.log("Find Complete Order from Id: ", orderId);
-
-    const order = await firstValueFrom(this.httpService.get(`http://${this.configService.get('ORDERS_SERVICE_URL')}/orders/${orderId}`));
-    const payment = await firstValueFrom(this.httpService.get(`http:/${this.configService.get('PAYMENT_SERVICE_URL')}/payments/${orderId}`));
-    const expedition = await firstValueFrom(this.httpService.get(`http://${this.configService.get('EXPEDITION_SERVICE_URL')}/expeditions/${orderId}`));
-
-    return { orderId, ordem: order.data, payment: payment.data, expedition: expedition.data };
-  }
-
 }
