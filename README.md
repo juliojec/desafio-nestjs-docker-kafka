@@ -54,7 +54,6 @@ O serviço BFF expõe as seguintes rotas para orquestração e consulta de pedid
 | GET    | `/orders/:orderId`                | Busca um pedido específico pelo ID.                                                       |
 | GET    | `/orders/payment/:orderId`        | Busca o pagamento relacionado a um pedido específico.                                     |
 | GET    | `/orders/expedition/:orderId`     | Busca a expedição relacionada a um pedido específico.                                     |
-| GET    | `/orders/:orderId/complete`       | Busca o pedido completo, incluindo informações do pedido, pagamento e expedição.          |
 
 ### Exemplos de uso
 
